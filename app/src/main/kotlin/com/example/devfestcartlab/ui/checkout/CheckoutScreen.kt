@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +26,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -97,19 +101,32 @@ internal fun CheckoutContent(
     )
   }
 
-  // BUG (Workshop Level B): 未使用 Scaffold innerPadding 或 WindowInsets 安全区，导致顶栏、列表与底部结算按钮被系统栏遮挡
-  Box(
+  // Edge-to-Edge 修复：底部「立即结算」栏放入 Scaffold bottomBar 槽位，
+  // innerPadding 下发给列表 contentPadding 并消费，避免系统栏遮挡首尾项
+  Scaffold(
     modifier = modifier
       .fillMaxSize()
       .background(MaterialTheme.colorScheme.background),
-  ) {
-    LazyColumn(
-      modifier = Modifier
-        .fillMaxSize()
-        .testTag("checkout_item_list"),
-      contentPadding = PaddingValues(bottom = 16.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    bottomBar = {
+      Surface(
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("checkout_bottom_bar"),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp,
+        shadowElevation = 12.dp,
+      ) {
+        val totalSaved =
+          (uiState.breakdown.subtotal - uiState.breakdown.finalPayable).coerceAtLeast(0.0)
+
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+          horizontalArrangement = Arrangement.SpaceBetween,
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
       // 1. GDG DevFest Shanghai 商城沉浸式顶栏 + 满 200 打 8 折动态进度条
       item {
         MallHeroBanner(
